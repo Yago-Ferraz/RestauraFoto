@@ -1,16 +1,14 @@
-# ── Instalação padrão (CPU) ───────────────────────────────────────────────────
-# pip install -r requirements.txt
+# RestauraFoto — dependências (CPU)
+# Instalação:
+#   pip install -r requirements.txt
 
-# ── Para usar GPU (CUDA) — substitui o torch acima ───────────────────────────
-# Verifique sua versão do CUDA em: nvidia-smi
-#
-# CUDA 12.1:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-# CUDA 11.8:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-# CUDA 12.4:  pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-# -----------------------------------------------------------------------------
+--index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2
+torchvision==0.17.2
 
-torch>=2.0.0
-torchvision>=0.15.0
+# Volta para o índice padrão do PyPI
+--index-url https://pypi.org/simple
+
 opencv-python>=4.8.0
 numpy>=1.24.0
 scikit-image>=0.21.0

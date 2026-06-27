@@ -30,14 +30,19 @@ def add_periodic_noise(image, freq=10, amplitude=35):
 
 
 def add_scratches(image, n_scratches=5):
+    """
+    Arranhões escuros (danos no papel/emulsão).
+    Linhas escuras são corrigidas por morph_close, que preenche fissuras finas.
+    Espessura mínima de 3px para ser visível à resolução de avaliação (64x64).
+    """
     noisy = image.copy()
     h, w  = image.shape[:2]
     for _ in range(n_scratches):
         x      = np.random.randint(0, w)
         length = np.random.randint(h // 4, h // 2)
         y0     = np.random.randint(0, h - length)
-        color  = (255, 255, 255) if image.ndim == 3 else 255
-        cv2.line(noisy, (x, y0), (x, y0 + length), color, np.random.randint(1, 3))
+        color  = (20, 20, 20) if image.ndim == 3 else 20
+        cv2.line(noisy, (x, y0), (x, y0 + length), color, np.random.randint(3, 6))
     return noisy
 
 
