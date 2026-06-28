@@ -3,8 +3,8 @@
 #   pip install -r requirements.txt
 
 --index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2
-torchvision==0.17.2
+torch==2.12.0
+torchvision==0.27.0
 
 # Volta para o índice padrão do PyPI
 --index-url https://pypi.org/simple
