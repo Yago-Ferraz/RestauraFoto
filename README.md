@@ -4,29 +4,13 @@ Sistema de restauração iterativa de fotografias históricas usando aprendizado
 
 ---
 
-## Demonstração rápida
-
-```bash
-# Interface gráfica (recomendado)
-python gui.py
-
-# Linha de comando — foto real
-python demo.py foto_antiga.jpg --mode real
-
-# Linha de comando — teste sintético (degrada e restaura)
-python demo.py foto.jpg --mode synthetic
-```
-
----
-
 ## Instalação
 
 **Requisitos:** Python 3.10 ou superior.
 
 ```bash
 # 1. Clone o repositório
-git clone <url-do-repo>
-cd restaurafoto
+git clone https://github.com/Yago-Ferraz/RestauraFoto.git
 
 # 2. Crie e ative o ambiente virtual
 python -m venv venv
@@ -69,20 +53,6 @@ restaurafoto/
 
 ## Como usar
 
-### Interface Gráfica
-
-```bash
-python gui.py
-```
-
-1. Clique em **Selecionar Foto** e escolha uma fotografia (`.jpg`, `.png`, `.webp`, etc.)
-2. Escolha o modo:
-   - **Real** — restaura a foto como está, sem referência
-   - **Sintético** — aplica uma degradação artificial e depois restaura, calculando SSIM e PSNR
-3. Ajuste o **máximo de iterações** (padrão: 6)
-4. Clique em **Restaurar**
-5. O painel direito mostra o resultado; use **Salvar Resultado** para exportar
-
 ### Linha de Comando
 
 ```bash
@@ -96,7 +66,19 @@ python demo.py foto_limpa.jpg --mode synthetic
 python demo.py foto.jpg --mode real --model checkpoint.pth
 ```
 
----
+### Interface Gráfica
+
+```bash
+python gui.py
+```
+
+1. Clique em **Selecionar Foto** e escolha uma fotografia (`.jpg`, `.png`, `.webp`, etc.)
+2. Escolha o modo:
+   - **Real** — restaura a foto como está, sem referência
+   - **Sintético** — aplica uma degradação artificial e depois restaura, calculando SSIM e PSNR
+3. Ajuste o **máximo de iterações** (padrão: 6)
+4. Clique em **Restaurar**
+5. O painel direito mostra o resultado; use **Salvar Resultado** para exportar
 
 ## Treinamento
 
