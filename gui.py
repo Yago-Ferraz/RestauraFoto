@@ -28,7 +28,7 @@ except ImportError as e:
     print(f"Erro ao importar módulos do projeto: {e}")
     sys.exit(1)
 
-MODEL_PATH   = "model.pth"
+MODEL_PATH = "model.pth"
 DISPLAY_SIZE = (480, 360)   # tamanho de exibição de cada imagem na GUI
 BG_COLOR     = "#1e1e2e"
 PANEL_COLOR  = "#2a2a3e"
@@ -305,9 +305,9 @@ class RestauraFotoApp(tk.Tk):
 
     def _try_load_model(self):
         if not Path(MODEL_PATH).exists():
-            self._set_status("model.pth nao encontrado — treine primeiro: python train.py", WARNING)
+            self._set_status(f"{MODEL_PATH} não encontrado — treine primeiro: python train.py", WARNING)
             return
-        self._set_status("Carregando modelo...")
+        self._set_status(f"Carregando modelo ({MODEL_PATH})...")
         self._progress.start(10)
         threading.Thread(target=self._load_model_worker, daemon=True).start()
 

@@ -124,6 +124,15 @@ def compute_soft_labels(current_bgr, clean_bgr):
     return (exp / exp.sum()).astype(np.float32)
 
 
+# ── Hard label balanceado ─────────────────────────────────────────────────────
+
+def _make_hard_label(target_action, n_actions=21, weight=0.75):
+    """Label com suavização: target=weight, restante=uniforme."""
+    label = np.full(n_actions, (1.0 - weight) / (n_actions - 1), dtype=np.float32)
+    label[target_action] = weight
+    return label
+
+
 # ── Geração de amostras ───────────────────────────────────────────────────────
 
 def _add_warm_cast(image_bgr, strength=0.3):
@@ -181,108 +190,112 @@ def _add_dust_spots(image_bgr, n_spots=15):
 
 def _make_sample(clean_bgr):
     """
-    17 cenários cobrindo todos os 20 filtros com variantes de intensidade.
-    Cada faixa é projetada para que um filtro específico (ou família) vença
-    claramente na métrica híbrida SSIM + color_cast.
+    Distribuição uniforme: 1 cenário por filtro (21 total).
+    Label fixo = 0.75 no filtro correto — elimina o viés da métrica.
+
+    Mapeamento degradação → filtro esperado:
+      0  mean              ← ruído gaussiano pesado (uniforme)
+      1  gaussian_soft     ← grão leve (σ 5-13)
+      2  gaussian_medium   ← grão médio (σ 13-22)
+      3  gaussian_strong   ← grão pesado (σ 22-45)
+      4  bilateral         ← grão médio (bilateral preserva bordas)
+      5  median_fine       ← sal-e-pimenta leve
+      6  median_strong     ← sal-e-pimenta intenso
+      7  high_pass_gentle  ← blur leve (σ 0.8-1.8)
+      8  high_pass_strong  ← blur forte (σ 2-4.5)
+      9  color_corr gentle ← cast leve (quente ou frio)
+     10  color_corr strong ← sépia intensa ou cast forte
+     11  clahe_subtle      ← fading leve (pretos acinzentados)
+     12  clahe_strong      ← fading forte + vinheta
+     13  gamma_bright      ← subexposição leve (fator 0.40-0.60)
+     14  gamma_very_bright ← subexposição forte (fator 0.12-0.32)
+     15  log_transform     ← subexposição moderada (fator 0.25-0.45)
+     16  contrast_stretch  ← histograma comprimido (lavado)
+     17  morph_open        ← manchas de poeira / foxing
+     18  morph_close       ← riscos escuros / fissuras
+     19  fourier           ← textura periódica forte
+     20  STOP              ← imagem limpa
     """
     current = augment_clean(clean_bgr)
-    roll    = np.random.random()
+    target  = np.random.randint(0, len(FILTER_NAMES))  # uniforme 0-20
 
-    if roll < 0.08:
-        # Foto ja limpa / bem preservada — modelo deve aprender a PARAR
-        # Nenhuma degradacao aplicada; STOP ganha porque nenhum filtro melhora
-        pass
+    if target == 0:    # mean — ruído gaussiano pesado
+        current = add_gaussian_noise(current, sigma=np.random.uniform(20, 40))
 
-    elif roll < 0.15:
-        # Tom quente muito sutil — papel envelhecido, pintura ambar, monalisa-like
-        current = _add_warm_cast(current, strength=np.random.uniform(0.15, 0.45))
+    elif target == 1:  # gaussian_soft — grão leve
+        current = add_film_grain(current, sigma=np.random.uniform(5, 13))
 
-    elif roll < 0.15:
-        # Tom quente moderado — foto de familia anos 70-80, papel amarelado
-        current = _add_warm_cast(current, strength=np.random.uniform(0.50, 0.90))
-        if np.random.random() < 0.4:
-            current = add_fading(current, factor=np.random.uniform(0.75, 0.92))
+    elif target == 2:  # gaussian_medium — grão médio
+        current = add_film_grain(current, sigma=np.random.uniform(13, 22))
 
-    elif roll < 0.23:
-        # Sepia moderada — amarelamento quimico medio
-        current = add_sepia_tone(current, intensity=np.random.uniform(0.30, 0.60))
+    elif target == 3:  # gaussian_strong — grão pesado
+        current = add_film_grain(current, sigma=np.random.uniform(22, 45))
 
-    elif roll < 0.31:
-        # Sepia forte — oxidacao severa, fotos muito antigas
-        current = add_sepia_tone(current, intensity=np.random.uniform(0.65, 1.00))
-        if np.random.random() < 0.4:
-            current = add_fading(current, factor=np.random.uniform(0.65, 0.88))
+    elif target == 4:  # bilateral — grão com estrutura de borda
+        current = add_film_grain(current, sigma=np.random.uniform(12, 28))
 
-    elif roll < 0.39:
-        # Tom azulado — WB frio, scanner com temperatura errada
-        current = _add_blue_cast(current, strength=np.random.uniform(0.30, 0.90))
+    elif target == 5:  # median_fine — sal-e-pimenta leve
+        current = add_salt_pepper(current, amount=np.random.uniform(0.01, 0.04))
 
-    elif roll < 0.47:
-        # Subexposicao forte — foto muito escura
+    elif target == 6:  # median_strong — sal-e-pimenta intenso
+        current = add_salt_pepper(current, amount=np.random.uniform(0.05, 0.15))
+
+    elif target == 7:  # high_pass_gentle — blur leve
+        current = _add_blur_degradation(current, sigma=np.random.uniform(0.8, 1.8))
+
+    elif target == 8:  # high_pass_strong — blur forte
+        current = _add_blur_degradation(current, sigma=np.random.uniform(2.0, 4.5))
+
+    elif target == 9:  # color_correction_gentle — cast leve
+        if np.random.random() < 0.5:
+            current = _add_warm_cast(current, strength=np.random.uniform(0.15, 0.40))
+        else:
+            current = _add_blue_cast(current, strength=np.random.uniform(0.15, 0.35))
+
+    elif target == 10:  # color_correction_strong — sépia/cast forte
+        if np.random.random() < 0.6:
+            current = add_sepia_tone(current, intensity=np.random.uniform(0.50, 0.95))
+        else:
+            current = _add_warm_cast(current, strength=np.random.uniform(0.55, 0.95))
+
+    elif target == 11:  # clahe_subtle — fading leve
+        current = add_fading(current, factor=np.random.uniform(0.60, 0.80))
+
+    elif target == 12:  # clahe_strong — fading forte
+        current = add_fading(current, factor=np.random.uniform(0.30, 0.55))
+        if np.random.random() < 0.5:
+            current = add_vignette(current, strength=np.random.uniform(0.30, 0.55))
+
+    elif target == 13:  # gamma_bright — subexposição leve
+        current = _add_dark_exposure(current, factor=np.random.uniform(0.40, 0.60))
+
+    elif target == 14:  # gamma_very_bright — subexposição forte
         current = _add_dark_exposure(current, factor=np.random.uniform(0.12, 0.32))
 
-    elif roll < 0.54:
-        # Subexposicao leve — foto levemente escura
-        current = _add_dark_exposure(current, factor=np.random.uniform(0.38, 0.65))
+    elif target == 15:  # log_transform — subexposição moderada
+        current = _add_dark_exposure(current, factor=np.random.uniform(0.25, 0.50))
 
-    elif roll < 0.62:
-        # Desbotamento/fading — compressao de contraste, pretos acinzentados
-        current = add_fading(current, factor=np.random.uniform(0.30, 0.75))
-        if np.random.random() < 0.55:
-            current = add_vignette(current, strength=np.random.uniform(0.3, 0.65))
+    elif target == 16:  # contrast_stretch — histograma comprimido (lavado)
+        lo = np.random.uniform(40, 80)
+        hi = np.random.uniform(175, 215)
+        current = ((current.astype(np.float32) / 255.0) * (hi - lo) + lo).clip(0, 255).astype(np.uint8)
 
-    elif roll < 0.68:
-        # Foto desfocada — movimento ou foco errado; high_pass deve restaurar
-        current = _add_blur_degradation(current, sigma=np.random.uniform(1.5, 4.0))
-        if np.random.random() < 0.3:
-            current = add_sepia_tone(current, intensity=np.random.uniform(0.1, 0.35))
+    elif target == 17:  # morph_open — manchas de poeira
+        current = _add_dust_spots(current, n_spots=np.random.randint(20, 60))
+        if np.random.random() < 0.4:
+            current = add_age_spots(current, n_spots=np.random.randint(3, 12))
 
-    elif roll < 0.75:
-        # Granulado leve — pelicula de baixa ISO
-        current = add_film_grain(current, sigma=np.random.uniform(6, 18))
-        if np.random.random() < 0.25:
-            current = add_salt_pepper(current, amount=np.random.uniform(0.003, 0.015))
+    elif target == 18:  # morph_close — riscos escuros
+        current = add_scratches(current, n_scratches=np.random.randint(4, 12))
 
-    elif roll < 0.82:
-        # Granulado forte — pelicula de alta ISO, muito ruido
-        current = add_film_grain(current, sigma=np.random.uniform(20, 45))
-        if np.random.random() < 0.5:
-            current = add_salt_pepper(current, amount=np.random.uniform(0.02, 0.08))
-
-    elif roll < 0.88:
-        # Sal-e-pimenta predominante (defeito de sensor ou emulsao)
-        current = add_salt_pepper(current, amount=np.random.uniform(0.03, 0.12))
-
-    elif roll < 0.93:
-        # Textura periodica (scanner com interferencia, papel texturizado)
+    elif target == 19:  # fourier — textura periódica forte
         current = add_periodic_noise(current,
-                                     freq=np.random.randint(5, 22),
-                                     amplitude=np.random.randint(20, 60))
+                                     freq=np.random.randint(5, 20),
+                                     amplitude=np.random.randint(30, 70))
 
-    elif roll < 0.96:
-        # Manchas claras: poeira no scanner, foxing — morph_open
-        current = _add_dust_spots(current, n_spots=np.random.randint(10, 30))
-        if np.random.random() < 0.5:
-            current = add_age_spots(current, n_spots=np.random.randint(3, 10))
+    # target == 20 → STOP: imagem limpa, sem degradação
 
-    elif roll < 0.98:
-        # Arranhoes e fissuras escuros — morph_close
-        current = add_scratches(current, n_scratches=np.random.randint(3, 10))
-
-    elif roll < 0.99:
-        # Degradacao historica composta realista
-        current = add_historical_photo_degradation(current)
-
-    else:
-        # Ruido gaussiano puro
-        current = add_gaussian_noise(current, sigma=np.random.uniform(8, 50))
-
-    # Aplica 0-2 filtros aleatorios para treinar estados parcialmente restaurados
-    for _ in range(np.random.randint(0, 3)):
-        current = apply_filter(current, np.random.randint(0, N_FILTERS))
-
-    soft_label = compute_soft_labels(current, clean_bgr)
-    return current, soft_label
+    return current, _make_hard_label(target)
 
 
 class RestorationDataset(Dataset):

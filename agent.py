@@ -103,8 +103,8 @@ class RestorationAgent:
         HIGH_PASS_STRONG     = 8
         # mean(0) gaussian_soft(1) gaussian_medium(2) gaussian_strong(3) bilateral(4)
         BLUR_ACTIONS         = {0, 1, 2, 3, 4}
-        # Filtros destrutivos excluídos ao forçar saída do STOP
-        DESTRUCTIVE_ACTIONS  = {FOURIER_ACTION, HIGH_PASS_STRONG}
+        # Filtros excluídos dos fallbacks — só high_pass_strong (amplifica ruído)
+        DESTRUCTIVE_ACTIONS  = {HIGH_PASS_STRONG}
 
         for step in range(1, max_iterations + 1):
             action, probs = self._predict(current)
@@ -120,8 +120,8 @@ class RestorationAgent:
                     print(f"[{step}] color_correction bloqueado (foto P&B) -> '{FILTER_NAMES[action]}'")
 
             # Filtros que requerem confiança mínima por risco de artefatos
-            FOURIER_MIN_PROB   = 0.45
-            HIGH_PASS_MIN_PROB = 0.30  # high_pass amplifica ruído se a imagem não está limpa
+            FOURIER_MIN_PROB   = 0.15
+            HIGH_PASS_MIN_PROB = 0.12
             if action == HIGH_PASS_STRONG and probs[HIGH_PASS_STRONG] < HIGH_PASS_MIN_PROB:
                 masked = probs.copy()
                 masked[HIGH_PASS_STRONG] = 0
@@ -186,7 +186,7 @@ class RestorationAgent:
             filtered = apply_filter(current, action)
 
             # Se o filtro distorceu demais, tenta a proxima melhor opcao em vez de desistir
-            threshold = 0.55 if action in (FOURIER_ACTION, HIGH_PASS_STRONG) else 0.25
+            threshold = 0.40 if action in (FOURIER_ACTION, HIGH_PASS_STRONG) else 0.25
             ssim_consecutivo = compute_ssim(
                 cv2.cvtColor(filtered, cv2.COLOR_BGR2RGB),
                 cv2.cvtColor(current,  cv2.COLOR_BGR2RGB)
