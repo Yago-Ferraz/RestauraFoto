@@ -1,53 +1,46 @@
-import torch
 import torch.nn as nn
+import torchvision.models as models
 
 
 class ImageAnalyzer(nn.Module):
     """
-    CNN pequena que analisa o estado atual da imagem e decide qual
-    filtro aplicar a seguir (ou parar).
+    ResNet-18 pré-treinado no ImageNet como extrator de features,
+    com cabeça de classificação para decisão de filtros.
 
-    Input:  tensor (B, 3, 128, 128) normalizado ImageNet
-    Output: logits (B, n_actions)
+    Transfer learning: o backbone já conhece texturas, bordas e padrões
+    visuais gerais. Só treinamos a cabeça para mapear essas features
+    na decisão de qual filtro aplicar.
+
+    Treino em duas fases (ver train.py):
+      Fase 1 — backbone congelado, treina só a cabeça (rápido)
+      Fase 2 — backbone descongelado, fine-tuning com lr menor
     """
 
-    def __init__(self, n_actions=8, input_channels=3):
+    def __init__(self, n_actions=8, freeze_backbone=True):
         super().__init__()
 
-        self.features = nn.Sequential(
-            # 128 → 64
-            nn.Conv2d(input_channels, 32, 3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
+        resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
 
-            # 64 → 32
-            nn.Conv2d(32, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
+        # Remove a cabeça original de 1000 classes do ImageNet
+        self.backbone = nn.Sequential(*list(resnet.children())[:-1])
 
-            # 32 → 16
-            nn.Conv2d(64, 128, 3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
+        if freeze_backbone:
+            for param in self.backbone.parameters():
+                param.requires_grad = False
 
-            # 16 → 8
-            nn.Conv2d(128, 128, 3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2),
-        )
-
+        # Cabeça de decisão de filtros
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d((4, 4)),
             nn.Flatten(),
-            nn.Linear(128 * 4 * 4, 256),
+            nn.Linear(512, 256),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(0.4),
             nn.Linear(256, n_actions),
         )
 
+    def unfreeze_backbone(self):
+        """Descongela o backbone para fine-tuning na fase 2."""
+        for param in self.backbone.parameters():
+            param.requires_grad = True
+
     def forward(self, x):
-        return self.classifier(self.features(x))
+        return self.classifier(self.backbone(x))

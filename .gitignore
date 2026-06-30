@@ -1,14 +1,41 @@
 venv/
 __pycache__/
 *.pyc
+.vscode/
 
-# Dataset e pesos (arquivos grandes)
+# Checkpoint de treinamento (muito grande para o GitHub)
+checkpoint.pth
+
+# Dataset (pesado demais — baixar via download_data.py)
+data/clean/
+data/DIV2K_train_HR/
+data/DIV2K_train_HR.zip
 data/BSDS300/
 data/cifar10_raw/
-data/clean/
-*.pth
 
-# Resultados gerados
-*.png
-training_curves.png
+# Arquivos temporários e compilados
+a.out
+*.o
+
+# Imagens de saída geradas pelo demo
+output/
+
+# Modelos antigos/viesados (muito grandes e desnecessários)
+checkpoint_v1_biased.pth
+model_v1_biased.pth
+
+# Imagens de teste pessoais (não fazem parte do projeto)
+*.webp
+gettyimages-*.jpg
+essaomateus.png
+monalisa-363x550.png
+RDT_*.jpg
+probabilidades.png
 resultado_*.png
+scratch_test.png
+training_curves.png
+foto.jpg
+foto_antiga.jpg
+foto_limpa.jpg
+grain.jpg
+SltzUkFBaR8kZ6Gf06N2ccuzghNUv7uHdn2oLnYp4FE.jpg
