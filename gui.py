@@ -105,7 +105,7 @@ class RestauraFotoApp(tk.Tk):
         self._build_statusbar()
 
     def _build_sidebar(self):
-        side = tk.Frame(self, bg=PANEL_COLOR, width=220)
+        side = tk.Frame(self, bg=PANEL_COLOR, width=260)
         side.grid(row=0, column=0, sticky="nsew", padx=(10, 5), pady=10)
         side.grid_propagate(False)
 
@@ -114,6 +114,13 @@ class RestauraFotoApp(tk.Tk):
                  bg=PANEL_COLOR, fg=ACCENT).pack(pady=(18, 2))
         tk.Label(side, text="Restauração com IA", font=("Segoe UI", 9),
                  bg=PANEL_COLOR, fg=TEXT_DIM).pack(pady=(0, 18))
+        tk.Label(
+        side,
+        text="ResNet-18 + Processamento Digital de Imagens",
+        bg=PANEL_COLOR,
+        fg=TEXT_DIM,
+        font=("Segoe UI", 8)
+        ).pack(pady=(0,10))
 
         ttk.Separator(side).pack(fill="x", padx=14, pady=4)
 
@@ -126,7 +133,8 @@ class RestauraFotoApp(tk.Tk):
         self._lbl_file.pack(anchor="w", padx=16, pady=(0, 6))
         tk.Button(side, text="Selecionar Foto...", command=self._select_image,
                   bg=ACCENT, fg="white", font=("Segoe UI", 9, "bold"),
-                  relief="flat", cursor="hand2", padx=10, pady=6).pack(padx=16, fill="x")
+                  relief="flat", cursor="hand2", padx=10, pady=6).pack(padx=16, fill="x",activebackground="#6d28d9",
+                  activeforeground="white",bd=0,)
 
         ttk.Separator(side).pack(fill="x", padx=14, pady=14)
 
@@ -169,14 +177,14 @@ class RestauraFotoApp(tk.Tk):
             side, text="Restaurar", command=self._run_restoration,
             bg="#16a34a", fg="white", font=("Segoe UI", 11, "bold"),
             relief="flat", cursor="hand2", padx=10, pady=10, state="disabled")
-        self._btn_restore.pack(padx=16, fill="x")
+        self._btn_restore.pack(padx=16, fill="x",activebackground="#6d28d9", activeforeground="white",bd=0,)
 
         # Salvar resultado (atalho no sidebar)
         self._btn_save = tk.Button(
             side, text="Salvar Resultado", command=self._save_result,
             bg="#1d4ed8", fg="white", font=("Segoe UI", 9),
             relief="flat", cursor="hand2", padx=10, pady=6, state="disabled")
-        self._btn_save.pack(padx=16, fill="x", pady=(8, 0))
+        self._btn_save.pack(padx=16, fill="x", pady=(8, 0), activebackground="#6d28d9", activeforeground="white", bd=0,)
 
         # Log de filtros
         ttk.Separator(side).pack(fill="x", padx=14, pady=14)
@@ -205,7 +213,7 @@ class RestauraFotoApp(tk.Tk):
             cmd = self._save_original if col == 0 else self._save_result
             btn = tk.Button(hdr, text="⬇ Salvar", command=cmd,
                             bg=PANEL_COLOR, fg=TEXT_DIM, font=("Segoe UI", 8),
-                            relief="flat", cursor="hand2", padx=6, pady=2, state="disabled")
+                            relief="flat", cursor="hand2", padx=6, pady=2, state="disabled", activebackground="#6d28d9", activeforeground="white", bd=0,)
             btn.pack(side="left", padx=(10, 0))
             if col == 0:
                 self._btn_dl_orig = btn
@@ -236,7 +244,7 @@ class RestauraFotoApp(tk.Tk):
                      bg=BG_COLOR, fg=TEXT_DIM).pack(side="left")
             tk.Button(hdr, text=" ℹ ", command=info_cmd,
                       bg=PANEL_COLOR, fg="#60a5fa", font=("Segoe UI", 9, "bold"),
-                      relief="flat", cursor="hand2", padx=3, pady=0
+                      relief="flat", cursor="hand2", padx=3, pady=0,activebackground="#6d28d9",ctiveforeground="white", bd=0,
                       ).pack(side="left", padx=(6, 0))
 
         # ── Linha 3: gráficos com toolbars interativas ────────────────────────
@@ -262,7 +270,7 @@ class RestauraFotoApp(tk.Tk):
         toolbar_f.pack(side="top", fill="x")
         tk.Button(frm_f, text="⬇ Salvar Gráfico", command=self._save_chart_filters,
                   bg=PANEL_COLOR, fg=TEXT_DIM, font=("Segoe UI", 7),
-                  relief="flat", cursor="hand2", padx=6, pady=2).pack(side="top", pady=(2, 0))
+                  relief="flat", cursor="hand2", padx=6, pady=2).pack(side="top", pady=(2, 0),activebackground="#6d28d9",activeforeground="white", bd=0,)
 
         # -- Evolução de métricas --
         frm_m = tk.Frame(viewer, bg=BG_COLOR)
@@ -285,7 +293,7 @@ class RestauraFotoApp(tk.Tk):
         toolbar_m.pack(side="top", fill="x")
         tk.Button(frm_m, text="⬇ Salvar Gráfico", command=self._save_chart_metrics,
                   bg=PANEL_COLOR, fg=TEXT_DIM, font=("Segoe UI", 7),
-                  relief="flat", cursor="hand2", padx=6, pady=2).pack(side="top", pady=(2, 0))
+                  relief="flat", cursor="hand2", padx=6, pady=2).pack(side="top", pady=(2, 0),activebackground="#6d28d9", activeforeground="white", bd=0,)
 
         # ── Linha 4: rótulo de métricas numéricas ─────────────────────────────
         self._lbl_ssim = tk.Label(viewer, text="", font=("Segoe UI", 9),
@@ -698,7 +706,7 @@ class RestauraFotoApp(tk.Tk):
                    bg=PANEL_COLOR, fg=TEXT_COLOR, width=460, justify="left").pack(padx=24, pady=(0, 8))
         tk.Button(win, text="Fechar", command=win.destroy,
                   bg=ACCENT, fg="white", font=("Segoe UI", 9, "bold"),
-                  relief="flat", cursor="hand2", padx=16, pady=6).pack(pady=(0, 16))
+                  relief="flat", cursor="hand2", padx=16, pady=6).pack(pady=(0, 16),activebackground="#6d28d9",vactiveforeground="white", bd=0,)
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
